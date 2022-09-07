@@ -73,7 +73,21 @@ int main(int argc, char *argv[])
     auto ncols = mat_d_r->GetNcols();
     TMatrixD had_d_r(nrows, ncols);
 
-    // prepare Eigen Matrix
+    {
+        auto time_start = std::chrono::high_resolution_clock::now();
+        for (int irep = 0; irep < nrep; ++irep) {
+            for (int irow = 0; irow < nrows; ++irow) {
+                for (int icol = 0; icol < ncols; ++icol) {
+                    had_d_r(irow, icol) = (*mat_d_r)(irow, icol) * (*mat_d_r)(irow, icol);
+                }
+            }
+        }
+        auto time_stop = std::chrono::high_resolution_clock::now();
+        auto time_duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_stop - time_start);
+        std::cout<<"TMatrixD: nrep: "<< nrep << " time: " <<time_duration.count() << " ms" <<std::endl;
+    }
+
+    // Eigen
     MatrixXd mat_d_e(nrows, ncols);
     MatrixXd had_d_e(nrows, ncols);
     for (int irow = 0; irow < nrows; ++irow) {
@@ -87,20 +101,6 @@ int main(int argc, char *argv[])
         for (int icol = 0; icol < ncols; ++icol) {
             mat_f_e(irow, icol) = (float)(*mat_d_r)(irow, icol);
         }
-    }
-
-    {
-        auto time_start = std::chrono::high_resolution_clock::now();
-        for (int irep = 0; irep < nrep; ++irep) {
-            for (int irow = 0; irow < nrows; ++irow) {
-                for (int icol = 0; icol < ncols; ++icol) {
-                    had_d_r(irow, icol) = (*mat_d_r)(irow, icol) * (*mat_d_r)(irow, icol);
-                }
-            }
-        }
-        auto time_stop = std::chrono::high_resolution_clock::now();
-        auto time_duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_stop - time_start);
-        std::cout<<"TMatrixD: nrep: "<< nrep << " time: " <<time_duration.count() << " ms" <<std::endl;
     }
 
     {
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
         std::cout<<"Eigen::MatrixXf: nrep: "<< nrep << " time: " <<time_duration.count() << " ms" <<std::endl;
     }
 
-    // prepare cuda arrays
+    // cuda 
     size_t mat_zize = nrows * ncols;
     float *mat_f_c = (float*)malloc(nbatch * mat_zize * sizeof(float));
     float *had_f_c = (float*)malloc(nbatch * mat_zize * sizeof(float));
